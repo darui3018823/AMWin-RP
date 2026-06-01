@@ -223,27 +223,30 @@ namespace AMWin_RichPresence {
 
                 // TODO add support for multiple beta versions (i.e. b1 and b2)
                 if (numverRemote > numverLocal || (numverRemote == numverLocal && verLocal.Contains('b') && !verRemote.Contains('b'))) {
-                    Application.Current.Dispatcher.Invoke((Action)async delegate {
-                        var result = await new MessageBox {
-                            Title = Localisation.Message_AppUpdate_Title,
-                            Content = Localisation.Message_AppUpdate,
-                            IsCloseButtonEnabled = false,
-                            PrimaryButtonText = Localisation.Message_Yes,
-                            SecondaryButtonText = Localisation.Message_No
-                        }.ShowDialogAsync();
-
-                        if (result == MessageBoxResult.Primary) {
-                            Process.Start(new ProcessStartInfo {
-                                FileName = Constants.GithubReleasesUrl,
-                                UseShellExecute = true
-                            });
-                        }
-                    });
+                    var promptTask = await Application.Current.Dispatcher.InvokeAsync<Task>(ShowUpdatePromptAsync);
+                    await promptTask;
                 } else {
                     logger?.Log("No AMWin-RP updates available.");
                 }
             } catch (Exception e) {
                 logger?.Log($"Could not check for AMWin-RP updates: {e.Message}");
+            }
+        }
+
+        private async Task ShowUpdatePromptAsync() {
+            var result = await new MessageBox {
+                Title = Localisation.Message_AppUpdate_Title,
+                Content = Localisation.Message_AppUpdate,
+                IsCloseButtonEnabled = false,
+                PrimaryButtonText = Localisation.Message_Yes,
+                SecondaryButtonText = Localisation.Message_No
+            }.ShowDialogAsync();
+
+            if (result == MessageBoxResult.Primary) {
+                Process.Start(new ProcessStartInfo {
+                    FileName = Constants.GithubReleasesUrl,
+                    UseShellExecute = true
+                });
             }
         }
     }

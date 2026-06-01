@@ -342,6 +342,8 @@ namespace AMWin_RichPresence {
         }
 
         private async void SaveListenBrainzCreds_Click(object sender, RoutedEventArgs e) {
+            SaveSettings();
+
             if (Properties.Settings.Default.ListenBrainzEnable) {
                 // Signals the ListenBrainz Scrobbler to re-init with new credentials
                 var result = await ((App)Application.Current).UpdateListenBrainzCreds();
