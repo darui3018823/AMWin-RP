@@ -78,7 +78,7 @@ namespace AMWin_RichPresence {
         }
     }
 
-    internal class AppleMusicClientScraper {
+    internal class AppleMusicClientScraper : IDisposable {
         struct WebReqFailCounters {
             public int MaxFails = Constants.NumFailedSearchesBeforeAbandon;
 
@@ -104,6 +104,8 @@ namespace AMWin_RichPresence {
         string appleMusicRegion;
         WebReqFailCounters webReqFails = new();
         LRCLibClient lrclibClient;
+        volatile bool refreshInProgress = false;
+        bool disposed = false;
 
         public AppleMusicClientScraper(string? lastFmApiKey, int refreshPeriodInSec, bool composerAsArtist, string appleMusicRegion, RefreshHandler refreshHandler, Logger? logger = null) {
             this.refreshHandler = refreshHandler;
@@ -119,8 +121,12 @@ namespace AMWin_RichPresence {
             timer.Start();
         }
 
-        ~AppleMusicClientScraper() {
+        public void Dispose() {
+            if (disposed) return;
+            disposed = true;
+            timer.Stop();
             timer.Elapsed -= Refresh;
+            timer.Dispose();
         }
 
         public void ChangeRegion(string region) {
@@ -129,12 +135,18 @@ namespace AMWin_RichPresence {
         }
 
         public async void Refresh(object? source, ElapsedEventArgs? e) {
+            if (disposed || refreshInProgress) return;
+            refreshInProgress = true;
             try {
                 await GetAppleMusicInfo();
             } catch (Exception ex) {
                 logger?.Log($"Something went wrong while scraping: {ex}");
+            } finally {
+                refreshInProgress = false;
             }
-            refreshHandler(currentSong);
+            if (!disposed) {
+                refreshHandler(currentSong);
+            }
         }
 
         public async Task GetAppleMusicInfo() {

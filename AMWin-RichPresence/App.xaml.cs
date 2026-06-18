@@ -174,6 +174,7 @@ namespace AMWin_RichPresence {
         }
 
         private void Application_Exit(object sender, ExitEventArgs e) {
+            amScraper.Dispose();
             taskbarIcon?.Dispose();
             discordClient.Disable();
             logger?.Log("Application finished");
